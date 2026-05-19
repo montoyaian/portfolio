@@ -23,6 +23,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Portafolio: Ian Montoya',
   description: 'Portafolio de Ian Carlos Montoya Carmona, ingeniero de sistemas con experiencia en desarrollo de software, conocimientos en inteligencia artificial y devops',
+  icons: {
+    icon: '/images/logopersonal.png',
+  },
 }
 
 export default function RootLayout({

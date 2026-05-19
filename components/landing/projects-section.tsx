@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Github, ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function ProjectImageCarousel({ images, alt, hovered }: { images: string[], alt: string, hovered: boolean }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -94,11 +95,21 @@ const projects = [
     liveUrl: "https://restaurant-menu-psi-orcin.vercel.app/marviche",
     featured: false,
   },
+  {
+    id: 6,
+    title: "SeriesChat - Debate & Recomendaciones",
+    description: "Chatbot que hace scraping de información sobre series para construir contexto, cargarlo en un LLM y debatir con memoria de opiniones y recomendaciones basadas en tus gustos.",
+    video: "/images/serieschat.mp4",
+    stack: ["Next.js", "FastAPI", "LangChain", "ChromaDB"],
+    featured: false,
+  },
 ];
 export function ProjectsSection() {
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredProject, setHoveredProject] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -161,10 +172,32 @@ export function ProjectsSection() {
               style={{ transitionDelay: `${index * 100 + 200}ms` }}
               onMouseEnter={() => setHoveredProject(project.id)}
               onMouseLeave={() => setHoveredProject(null)}
+              onClick={() => setSelectedProjectId(project.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedProjectId(project.id);
+                }
+              }}
             >
               {/* Image */}
               <div className="relative h-60 overflow-hidden bg-black shrink-0">
-                {project.images ? (
+                {project.video ? (
+                  <video
+                    src={project.video}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                    aria-label={`${project.title} demo video`}
+                    className={`w-full h-full object-cover transition-transform duration-500 ${
+                      hoveredProject === project.id ? "scale-105" : "scale-100"
+                    }`}
+                  />
+                ) : project.images ? (
                   <ProjectImageCarousel images={project.images} alt={project.title} hovered={hoveredProject === project.id} />
                 ) : (
                   <img
@@ -212,6 +245,7 @@ export function ProjectsSection() {
                         href={project.liveUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
+                        onClick={(event) => event.stopPropagation()}
                         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       >
                         Demo
@@ -231,6 +265,75 @@ export function ProjectsSection() {
             </div>
           ))}
         </div>
+
+        <Dialog
+          open={selectedProjectId !== null}
+          onOpenChange={(open) => {
+            if (!open) setSelectedProjectId(null);
+          }}
+        >
+          {selectedProject && (
+            <DialogContent className="sm:max-w-[1400px] w-[min(96vw,1400px)] p-0 overflow-hidden">
+              <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:min-h-[36rem]">
+                <div className="relative bg-black">
+                  {selectedProject.video ? (
+                    <video
+                      src={selectedProject.video}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      preload="metadata"
+                      aria-label={`${selectedProject.title} demo video`}
+                      className="w-full h-96 sm:h-[32rem] lg:h-full object-cover"
+                    />
+                  ) : selectedProject.images ? (
+                    <div className="h-96 sm:h-[32rem] lg:h-full">
+                      <ProjectImageCarousel
+                        images={selectedProject.images}
+                        alt={selectedProject.title}
+                        hovered={false}
+                      />
+                    </div>
+                  ) : (
+                    <img
+                      src={selectedProject.image}
+                      alt={selectedProject.title}
+                      className="w-full h-96 sm:h-[32rem] lg:h-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent pointer-events-none" />
+                </div>
+
+                <div className="p-6 lg:p-8 flex flex-col gap-6">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl lg:text-3xl font-display">
+                      {selectedProject.title}
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <p className="text-sm lg:text-base text-muted-foreground leading-relaxed">
+                    {selectedProject.description}
+                  </p>
+
+                  <div>
+                    <div className="text-xs font-mono text-muted-foreground mb-3">Tecnologias</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProject.stack.map((tech) => (
+                        <span
+                          key={tech}
+                          className="text-xs font-mono px-2 py-1 border border-foreground/10 text-muted-foreground"
+                        >
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          )}
+        </Dialog>
 
         {/* View all link */}
         <div className={`mt-12 text-center transition-all duration-1000 delay-500 ${
