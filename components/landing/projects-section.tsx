@@ -99,7 +99,7 @@ const projects = [
     id: 6,
     title: "SeriesChat - Debate & Recomendaciones",
     description: "Chatbot que hace scraping de información sobre series para construir contexto, cargarlo en un LLM y debatir con memoria de opiniones y recomendaciones basadas en tus gustos.",
-    video: "/images/serieschat.mp4",
+    video: "/images/SeriesChat.mp4",
     stack: ["Next.js", "FastAPI", "LangChain", "ChromaDB"],
     featured: false,
   },
