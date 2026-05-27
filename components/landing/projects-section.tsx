@@ -5,47 +5,79 @@ import { ExternalLink, Github, ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-function ProjectImageCarousel({ images, alt, hovered }: { images: string[], alt: string, hovered: boolean }) {
+type ProjectMediaItem = {
+  type: "image" | "video";
+  src: string;
+};
+
+const isVideoFile = (src: string) => /\.(mp4|webm|ogg)$/i.test(src);
+
+function ProjectMediaCarousel({ media, alt, hovered }: { media: ProjectMediaItem[]; alt: string; hovered: boolean }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const hasMultiple = media.length > 1;
+
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [media.length]);
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    if (!hasMultiple) return;
+    setCurrentIndex((prev) => (prev + 1) % media.length);
   };
 
   const prevImage = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    if (!hasMultiple) return;
+    setCurrentIndex((prev) => (prev - 1 + media.length) % media.length);
   };
 
   return (
     <div className="relative w-full h-full">
-      {images.map((img, i) => (
-        <img
-          key={img}
-          src={`/images/${img}`}
-          alt={`${alt} image ${i + 1}`}
-          className={`absolute top-0 left-0 w-full h-full object-cover transition-all duration-700 ${
-            i === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
-          } ${hovered ? "scale-110" : "scale-100"}`}
-        />
-      ))}
-      <div className="absolute bottom-2 right-2 z-20 flex gap-2">
-        <button
-          onClick={prevImage}
-          className="p-1 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button
-          onClick={nextImage}
-          className="p-1 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
+      {media.map((item, i) =>
+        item.type === "video" ? (
+          <video
+            key={`${item.src}-${i}`}
+            src={item.src}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            aria-label={`${alt} video ${i + 1}`}
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-all duration-700 ${
+              i === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+            } ${hovered ? "scale-110" : "scale-100"}`}
+          />
+        ) : (
+          <img
+            key={`${item.src}-${i}`}
+            src={item.src}
+            alt={`${alt} image ${i + 1}`}
+            className={`absolute top-0 left-0 w-full h-full object-cover transition-all duration-700 ${
+              i === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+            } ${hovered ? "scale-110" : "scale-100"}`}
+          />
+        )
+      )}
+      {hasMultiple && (
+        <div className="absolute bottom-2 right-2 z-20 flex gap-2">
+          <button
+            onClick={prevImage}
+            className="p-1 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={nextImage}
+            className="p-1 rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -80,7 +112,8 @@ const projects = [
   {
     id: 4,
     title: "Survey Builder Engine",
-    description: "Plataforma avanzada con editor drag-and-drop para encuestas dinámicas. Soporta lógica condicional compleja, procesamiento de datos en tiempo real y escalabilidad mediante SSR con Next.js.",
+    description: "Plataforma avanzada con editor drag-and-drop para encuestas dinamicas. Incluye un chat asistente que convierte lenguaje natural a SQL con Vanna AI y LLMs, procesamiento de datos en tiempo real y escalabilidad mediante SSR con Next.js.",
+    video: "/images/SurveyChat.mp4",
     images: ["survey3.png" , "survey1.png", "survey2.png"],
     stack: ["Next.js", "Nest.js", "PostgreSQL"],
     liveUrl: "https://v0-encuestafrontend.vercel.app/signin",
@@ -99,17 +132,44 @@ const projects = [
     id: 6,
     title: "SeriesChat - Debate & Recomendaciones",
     description: "Chatbot que hace scraping de información sobre series para construir contexto, cargarlo en un LLM y debatir con memoria de opiniones y recomendaciones basadas en tus gustos.",
-    video: "/images/serieschat.mp4",
+    video: "/images/SeriesChat.mp4",
     stack: ["Next.js", "FastAPI", "LangChain", "ChromaDB"],
     featured: false,
   },
 ];
+
+type Project = (typeof projects)[number];
+
+const getProjectMedia = (project: Project): ProjectMediaItem[] => {
+  const media: ProjectMediaItem[] = [];
+
+  if (project.video) {
+    media.push({ type: "video", src: project.video });
+  }
+
+  if (project.images?.length) {
+    media.push(
+      ...project.images.map((image) => ({
+        type: isVideoFile(image) ? "video" : "image",
+        src: `/images/${image}`,
+      }))
+    );
+  } else if (project.image) {
+    media.push({
+      type: isVideoFile(project.image) ? "video" : "image",
+      src: project.image,
+    });
+  }
+
+  return media;
+};
 export function ProjectsSection() {
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredProject, setHoveredProject] = useState<number | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+  const selectedProjectMedia = selectedProject ? getProjectMedia(selectedProject) : [];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -184,30 +244,11 @@ export function ProjectsSection() {
             >
               {/* Image */}
               <div className="relative h-60 overflow-hidden bg-black shrink-0">
-                {project.video ? (
-                  <video
-                    src={project.video}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="metadata"
-                    aria-label={`${project.title} demo video`}
-                    className={`w-full h-full object-cover transition-transform duration-500 ${
-                      hoveredProject === project.id ? "scale-105" : "scale-100"
-                    }`}
-                  />
-                ) : project.images ? (
-                  <ProjectImageCarousel images={project.images} alt={project.title} hovered={hoveredProject === project.id} />
-                ) : (
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    className={`w-full h-full object-cover transition-transform duration-500 ${
-                      hoveredProject === project.id ? "scale-110" : "scale-100"
-                    }`}
-                  />
-                )}
+                <ProjectMediaCarousel
+                  media={getProjectMedia(project)}
+                  alt={project.title}
+                  hovered={hoveredProject === project.id}
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent pointer-events-none" />
               </div>
 
@@ -276,32 +317,13 @@ export function ProjectsSection() {
             <DialogContent className="sm:max-w-[1400px] w-[min(96vw,1400px)] p-0 overflow-hidden">
               <div className="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:min-h-[36rem]">
                 <div className="relative bg-black">
-                  {selectedProject.video ? (
-                    <video
-                      src={selectedProject.video}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      preload="metadata"
-                      aria-label={`${selectedProject.title} demo video`}
-                      className="w-full h-96 sm:h-[32rem] lg:h-full object-cover"
-                    />
-                  ) : selectedProject.images ? (
-                    <div className="h-96 sm:h-[32rem] lg:h-full">
-                      <ProjectImageCarousel
-                        images={selectedProject.images}
-                        alt={selectedProject.title}
-                        hovered={false}
-                      />
-                    </div>
-                  ) : (
-                    <img
-                      src={selectedProject.image}
+                  <div className="h-96 sm:h-[32rem] lg:h-full">
+                    <ProjectMediaCarousel
+                      media={selectedProjectMedia}
                       alt={selectedProject.title}
-                      className="w-full h-96 sm:h-[32rem] lg:h-full object-cover"
+                      hovered={false}
                     />
-                  )}
+                  </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent pointer-events-none" />
                 </div>
 
