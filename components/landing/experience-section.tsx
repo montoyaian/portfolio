@@ -26,7 +26,7 @@ const experiences = [
     id: 3,
     role: "Cofounder & Full Stack Developer",
     company: "Startup local",
-    location: "Ciudad, Pais",
+    location: "Cartagena, Colombia",
     period: "2026",
     description: "Fundacion y desarrollo de una startup local, donde hemos desarrollado proyectos para gestion de invetarios y menus multitenant",
     highlights: ["Next.js", "React", "Nest.js"],
